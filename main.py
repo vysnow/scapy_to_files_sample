@@ -73,7 +73,8 @@ def find_data(packet):
     if len(request) > 0:
         return request
     else:
-        response = get_request_or_response(r"HTTP", payload)
+        # response = get_request_or_response(r"HTTP", payload)
+        response = bytes(payload, 'utf8')
         if len(response) > 0:
             return response
         else:
@@ -137,9 +138,12 @@ def print_list(list):
     i = 1
     for item in list:
         datetime_text = item[0]
-        summary_text = item[1]
-        text = item[2]
-        print("No:", i, " ", datetime_text)
+        # host = item[1]
+        # dest = item[2]
+        # protocal = item[3]
+        summary_text = item[4]
+        text = item[5]
+        print("No:", i, "", datetime_text)
         print("\t", summary_text)
         print("\t", text)
         i += 1
@@ -235,15 +239,16 @@ if __name__ == "__main__":
     """
 
     # 1. sniffing
-    packages = sniff(iface="en0", count=100)   # sniffing
-    pcap_filename = "sniff.pcap"
-    wrpcap(pcap_filename, packages)            # save sniffing result
+    # packages = sniff(iface="eth0", count=10)   # sniffing
+    # pcap_filename = "sniff.pcap"
+    # wrpcap(pcap_filename, packages)            # save sniffing result
 
     # 2. read from pcap file
-    # pcap_filename = "sample.pcap"
+    pcap_filename = "sample.pcap"
 
     excel_filename = "sniff.xlsx"
     rows = analyze_captured_file(pcap_filename)
-    # print_list(rows)
+    
+    print_list(rows)
     make_excel_file(rows, excel_filename)
     print("scapy_to_xls: completed.")
