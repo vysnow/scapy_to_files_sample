@@ -5,6 +5,7 @@ import re
 from scapy.all import *
 from datetime import datetime
 from excel_wrapper import ExcelWapper
+from xml_wrapper import XmlWapper
 
 
 def get_request_or_response(keyword, contents):
@@ -232,23 +233,88 @@ def make_excel_file(list, filename):
 
     print("sample:", filename, " created.")
 
+def make_xml_file(list, filename):
+    """ Make report xml file
+
+    This function makes a xml file with using XmlWapper class.
+    If you want to know detail, see xml_wrapper.py(docstirng)
+
+    Parameters
+    ----------
+
+    list : list
+        analyze_captured_file function's result
+
+    filename : str
+        Filename of xml.
+
+    """
+
+    xml_tree = XmlWapper()
+    xml_tree.add_attribute(xml_tree.root, "total", len(list))
+
+    # values
+    for item in list:
+        node = xml_tree.add_node("Packet")
+        node.tag
+
+        datetime_text = item[0]
+        host = item[1]
+        dest = item[2]
+        protocal = item[3]
+        summary_text = item[4]
+        text = item[5]
+
+        leaf = xml_tree.add_leaf(node, "DateTime")
+        leaf.text = datetime_text
+
+        leaf = xml_tree.add_leaf(node, "Host")
+        leaf.text = host
+
+        leaf = xml_tree.add_leaf(node, "Dest")
+        leaf.text = dest
+
+        leaf = xml_tree.add_leaf(node, "Protocol")
+        leaf.text = protocal
+
+        leaf = xml_tree.add_leaf(node, "Summary")
+        leaf.text = summary_text
+
+        leaf = xml_tree.add_leaf(node, "Text")
+        leaf.text = text
+
+    # save file
+    xml_tree.save(filename)
+
+    print("sample:", filename, " created.")
 
 if __name__ == "__main__":
-    """ program of scapy and openpyxl
+    """ program of scapy and openpyxl, lxml
         pip install -r requirements.txt
     """
 
     # 1. sniffing
-    # packages = sniff(iface="eth0", count=10)   # sniffing
-    # pcap_filename = "sniff.pcap"
-    # wrpcap(pcap_filename, packages)            # save sniffing result
+    packages = sniff(iface="eth0", count=10)   # sniffing
+    pcap_filename = "sniff.pcap"
+    wrpcap(pcap_filename, packages)            # save sniffing result
 
     # 2. read from pcap file
-    pcap_filename = "sample.pcap"
+    # pcap_filename = "sample.pcap"
+    
+    rows = analyze_captured_file(pcap_filename)
+    print_list(rows) # show on console
 
     excel_filename = "sniff.xlsx"
-    rows = analyze_captured_file(pcap_filename)
-    
-    print_list(rows)
     make_excel_file(rows, excel_filename)
+
+    xml_filename = "sniff.xml"
+    make_xml_file(rows, xml_filename)
+
+    # txt_filename = "sniff.txt"
+    # make_txt_file(rows, txt_filename)
+
+    # sql insert
+    # mysqldns = ...
+    # save_sql(rows, dns)
+
     print("scapy_to_xls: completed.")
