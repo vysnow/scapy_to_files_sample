@@ -7,7 +7,7 @@ from datetime import datetime
 from excel_wrapper import ExcelWapper
 
 
-def get_http_request_or_response(keyword, contents):
+def get_request_or_response(keyword, contents):
     """ Get HTTP request or response text data
 
     ex. 
@@ -43,7 +43,7 @@ def get_http_request_or_response(keyword, contents):
     return text
 
 
-def find_http_data(packet):
+def find_data(packet):
     """ Find HTTP data from packet data.
 
     If the packet include  http request or response , then pick up its text.
@@ -68,24 +68,24 @@ def find_http_data(packet):
 
     """
     payload = str(packet['Raw'])
-    request = get_http_request_or_response(r"POST", payload)
-    request += get_http_request_or_response(r"GET", payload)
+    request = get_request_or_response(r"POST", payload)
+    request += get_request_or_response(r"GET", payload)
     if len(request) > 0:
         return request
     else:
-        response = get_http_request_or_response(r"HTTP", payload)
+        response = get_request_or_response(r"HTTP", payload)
         if len(response) > 0:
             return response
         else:
             return None
 
 
-def analyze_http_captured_file(name, port):
+def analyze_captured_file(name):
     """ Analyze capture file(*.pcap) as HTTP transfferd.
 
     This function outputs  list data. like this,
 
-    [(timestump, summary, http_text), (timestump, summary, http_text), ...]
+    [(timestump, summary, text), (timestump, summary, text), ...]
 
     touple example.
         ( 2019-03-28T07:49:11.13361,   # index 0
@@ -106,46 +106,47 @@ def analyze_http_captured_file(name, port):
 
     text : list
         report data
-        [(timestump, summary, http_text), (timestump, summary, http_text), ...]
+        [(timestump, summary, text), (timestump, summary, text), ...]
 
     """
-    def filter(p): return Raw in p and TCP in p and (
-        p[TCP].sport == port or p[TCP].dport == port)
+    def filter(p): return Raw in p
     packets = rdpcap(name).filter(filter)
-    http_list = []
+    list = []
 
     for packet in packets:
-        text = find_http_data(packet)
-        if text != None:
-            datetime_text = datetime.fromtimestamp(packet.time).isoformat()
-            http_list.append((datetime_text, packet.summary(), text))
+        datetime_text = datetime.fromtimestamp(
+            float(packet.time)).strftime('%Y-%m-%d %H:%M:%S.%f')
 
-    return http_list
+        data = find_data(packet)
+        list.append((datetime_text, packet.sprintf("%IP.src%:%TCP.sport%"), packet.sprintf("%IP.dst%:%TCP.dport%"),
+         packet.sprintf("%IP.proto%"), packet.summary(), data))
+
+    return list
 
 
-def print_http_list(http_list):
-    """ Print analyze_http_captured_file function's result.
+def print_list(list):
+    """ Print analyze_captured_file function's result.
 
     Parameters
     ----------
 
-    http_list : list
-        analyze_http_captured_file function's result
+    list : list
+        analyze_captured_file function's result
 
     """
     i = 1
-    for http_item in http_list:
-        datetime_text = http_item[0]
-        summary_text = http_item[1]
-        http_text = http_item[2]
+    for item in list:
+        datetime_text = item[0]
+        summary_text = item[1]
+        text = item[2]
         print("No:", i, " ", datetime_text)
         print("\t", summary_text)
-        print("\t", http_text)
+        print("\t", text)
         i += 1
 
 
-def write_http_data_to_excel(excel, x, y, http_item):
-    """ Write analyze_http_captured_file function's result[n] to excel 
+def write_data_to_excel(excel, x, y, item):
+    """ Write analyze_captured_file function's result[n] to excel 
 
     Parameters
     ----------
@@ -159,22 +160,28 @@ def write_http_data_to_excel(excel, x, y, http_item):
     y : int
         sheet position y
 
-    http_item : taple
-        taple of analyze_http_captured_file function's result
+    item : taple
+        taple of analyze_captured_file function's result
         ex. 
-            result = analyze_http_captured_file(name, file)
-            write_http_data_to_excel(excel, x, y, result[n]) # <- like this
+            result = analyze_captured_file(name, file)
+            write_data_to_excel(excel, x, y, result[n]) # <- like this
 
     """
-    datetime_text = http_item[0]
-    summary_text = http_item[1]
-    http_text = http_item[2]
+    datetime_text = item[0]
+    host = item[1]
+    dest = item[2]
+    protocal = item[3]
+    summary_text = item[4]
+    text = item[5]
     excel.write_value(x + 0,  y, datetime_text)
-    excel.write_value(x + 1,  y, summary_text)
-    excel.write_value(x + 2,  y, http_text)
+    excel.write_value(x + 1,  y, host)
+    excel.write_value(x + 2,  y, dest)
+    excel.write_value(x + 3,  y, protocal)
+    excel.write_value(x + 4,  y, summary_text)
+    excel.write_value(x + 5,  y, text)
 
 
-def make_excel_file(http_list, filename, img_filename):
+def make_excel_file(list, filename):
     """ Make report excel file
 
     This function makes a excel file with using ExcelWapper class.
@@ -183,8 +190,8 @@ def make_excel_file(http_list, filename, img_filename):
     Parameters
     ----------
 
-    http_list : list
-        analyze_http_captured_file function's result
+    list : list
+        analyze_captured_file function's result
 
     filename : str
         Filename of excel.
@@ -199,57 +206,44 @@ def make_excel_file(http_list, filename, img_filename):
     excel.create_book()
     excel.create_sheet(sheet_name)
 
-    x_start = x_pos = 2
-    x_size = 3
-    y_start = y_pos = 4
+    x_start = x_pos = 1
+    x_size = 6
+    y_start = y_pos = 1
 
     # title
-    http_item = ("TimeStump", "Summary", "HTTP data")
-    write_http_data_to_excel(excel, x_pos, y_pos, http_item)
+    item = ("TimeStump", "Host", "Dest", "Protocal", "Summary", "Raw data")
+    write_data_to_excel(excel, x_pos, y_pos, item)
     y_pos += 1
 
     # values
-    for http_item in http_list:
-        write_http_data_to_excel(excel, x_pos, y_pos, http_item)
+    for item in list:
+        write_data_to_excel(excel, x_pos, y_pos, item)
         y_pos += 1
 
     excel.resize_sheet_width()
     excel.draw_table(x_start, x_size, y_start, (y_pos - y_start))
 
-    # image
-    if img_filename != None:
-        excel.add_imagefile(2, 2, img_filename, False, True)
-
     # save file
     excel.save(filename)
 
-    print("scapy_to_xls_httpsample:", filename, " created.")
+    print("sample:", filename, " created.")
 
 
 if __name__ == "__main__":
-    """ Sample program of scapy and openpyxl
+    """ program of scapy and openpyxl
+        pip install -r requirements.txt
     """
 
-    # arguments
-    if len(sys.argv) < 3:
-        print(
-            "python3x scapy_to_xls_httpsampple.py [pcap filename] [port] [excel filename(option)]")
-        sys.exit(1)
-    img_filename = "report_sample.png"
-    excel_filename = None
-    pcap_filename = sys.argv[1]
-    http_port = int(sys.argv[2])
-    if len(sys.argv) == 4:
-        excel_filename = sys.argv[3]
-    print("scapy_to_xls_httpsample: pcap:", pcap_filename,
-          " port:", http_port, "excel:", excel_filename)
+    # 1. sniffing
+    packages = sniff(iface="en0", count=100)   # sniffing
+    pcap_filename = "sniff.pcap"
+    wrpcap(pcap_filename, packages)            # save sniffing result
 
-    # scapy
-    http_list = analyze_http_captured_file(pcap_filename, http_port)
-    print_http_list(http_list)
+    # 2. read from pcap file
+    # pcap_filename = "sample.pcap"
 
-    # openpyxl
-    if excel_filename != None:
-        make_excel_file(http_list, excel_filename, img_filename)
-
-    print("scapy_to_xls_httpsample:completed.")
+    excel_filename = "sniff.xlsx"
+    rows = analyze_captured_file(pcap_filename)
+    # print_list(rows)
+    make_excel_file(rows, excel_filename)
+    print("scapy_to_xls: completed.")

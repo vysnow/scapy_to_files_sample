@@ -195,16 +195,16 @@ class ExcelWapper:
         """
         x_pos = self.__get_xpos(x)
         xy_pos = x_pos + str(y)
-        img = Image(img_filename)
-        self.sheet.add_image(img, xy_pos)
+        # img = Image(img_filename)
+        # self.sheet.add_image(img, xy_pos)
 
-        if resize_x == True:
-            self.sheet.column_dimensions[x_pos].width = self.__calc_length_of_image(
-                self.sheet.column_dimensions[x_pos].width, img.width, True)
+        # if resize_x == True:
+        #     self.sheet.column_dimensions[x_pos].width = self.__calc_length_of_image(
+        #         self.sheet.column_dimensions[x_pos].width, img.width, True)
 
-        if resize_y == True:
-            self.sheet.row_dimensions[y].height = self.__calc_length_of_image(
-                self.sheet.row_dimensions[y].height, img.height, False)
+        # if resize_y == True:
+        #     self.sheet.row_dimensions[y].height = self.__calc_length_of_image(
+        #         self.sheet.row_dimensions[y].height, img.height, False)
 
     def save(self, name):
         """Save excel file.
