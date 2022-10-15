@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding: shift-jis
-from pprint import PrettyPrinter
 from lxml import etree as ET
 
 class XmlWapper:

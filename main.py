@@ -4,9 +4,9 @@
 import re
 from scapy.all import *
 from datetime import datetime
-from excel_wrapper import ExcelWapper
-from xml_wrapper import XmlWapper
-
+from wrapper.excel_wrapper import ExcelWapper
+from wrapper.xml_wrapper import XmlWapper
+from wrapper.sqlite3_wrapper import SqlWapper
 
 def get_request_or_response(keyword, contents):
     """ Get HTTP request or response text data
@@ -256,7 +256,6 @@ def make_xml_file(list, filename):
     # values
     for item in list:
         node = xml_tree.add_node("Packet")
-        node.tag
 
         datetime_text = item[0]
         host = item[1]
@@ -288,19 +287,54 @@ def make_xml_file(list, filename):
 
     print("sample:", filename, " created.")
 
+def make_sql_file(list, dbname, tablename):
+    """ Make report db file
+
+    This function makes a db file with using SqlWapper class.
+    If you want to know detail, see sqlite3_wrapper.py(docstirng)
+
+    Parameters
+    ----------
+
+    list : list
+        analyze_captured_file function's result
+
+    dbname : str
+        db name of sqlite3.
+
+    """
+
+    db = SqlWapper(dbname)
+    db.init_table(tablename)
+
+    # values
+    for item in list:
+        # datetime_text = item[0]
+        # host = item[1]
+        # dest = item[2]
+        # protocal = item[3]
+        # summary_text = item[4]
+        # text = item[5]
+        db.add_row(item)
+
+    # save file
+    db.save()
+
+    print("sample:", dbname, " created.")
+
 if __name__ == "__main__":
     """ program of scapy and openpyxl, lxml
         pip install -r requirements.txt
     """
 
     # 1. sniffing
-    packages = sniff(iface="eth0", count=10)   # sniffing
-    pcap_filename = "sniff.pcap"
-    wrpcap(pcap_filename, packages)            # save sniffing result
+    # packages = sniff(iface="eth0", count=10)   # sniffing
+    # pcap_filename = "sniff.pcap"
+    # wrpcap(pcap_filename, packages)            # save sniffing result
 
     # 2. read from pcap file
-    # pcap_filename = "sample.pcap"
-    
+    pcap_filename = "sample.pcap"
+
     rows = analyze_captured_file(pcap_filename)
     print_list(rows) # show on console
 
@@ -314,7 +348,14 @@ if __name__ == "__main__":
     # make_txt_file(rows, txt_filename)
 
     # sql insert
-    # mysqldns = ...
-    # save_sql(rows, dns)
+    """ on kali linux 
+        install sqlite3 by command
+            apt-get install sqlite3 sqlitebrowser
+        to show sql file by command
+            sqlitebrowser sniff.db
+    """
+    sql_name = "sniff.db"
+    table_name = "Packet"
+    make_sql_file(rows, sql_name, table_name)
 
-    print("scapy_to_xls: completed.")
+    print("sniff and export: completed.")

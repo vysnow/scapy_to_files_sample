@@ -14,7 +14,7 @@ This sample analyzes pcap file and pick up HTTP data. Additionally,  this sample
 ## My environment
 
 * OS: Kali Linux 2018-.4
-* Python : 3.6
+* Python : 3.11
 * Scapy : 2.4.2
 * openpyxl : 2.6.2
 
@@ -29,9 +29,9 @@ If you want to install Scapy, you should see this webpage.
 ### pip install
 
 ```bash
-pip install scapy
-pip install openpyxl
-pip install pillow
+pip3 install scapy
+pip3 install openpyxl
+pip3 install pillow
 ```
 
 ### how to confirm
@@ -42,7 +42,7 @@ For example,
 
 ```bash
 #python scapy_to_xls_httpsampple.py [pcap filename] [port] [excel filename(option)]
-python scapy_to_xls_http_sample.py sample.pcap 80 output.xlsx
+python3 scapy_to_xls_http_sample.py sample.pcap 80 output.xlsx
 ```
 This repository includes sample capture file(sample.pcap). In this example ,  this program makes output.xlsx. If you capture another HTTP, you can analyze your HTTP traffic.
 
